@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * @file
+ * Contains utilities module.
+ */
+
+/**
+ * Define secret token value.
+ */
+define('TOKEN_VALUE', 'SomeSecretTokenValue');
+
+/**
+ * Implements hook_menu().
+ */
+function utilities_menu() {
+  // Secret page definition.
+  $items['secret'] = array(
+    'title' => 'Secret page',
+    'description' => t('Valid Drupal token from query string.'),
+    'page callback' => 'utilities_secret_page_callback',
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * Callback page menu to render secret page.
+ * @see https://api.drupal.org/api/drupal/includes%21common.inc/function/drupal_valid_token/7
+ */
+function utilities_secret_page_callback() {
+  // Retrieve all query string.
+  $parameters = drupal_get_query_parameters();
+  // Check if token is already defined.
+  if (empty($parameters['token'])) {
+    // Otherwise denied access to page.
+    utilities_denied_access('Token missing.');
+  }
+  // Then check if current toke value is valid.
+  if (!drupal_valid_token($parameters['token'], TOKEN_VALUE)) {
+    // Otherwise denied access to page.
+    utilities_denied_access('Token is not valid.');
+  }
+  // Define secret page output.
+  $output['secret_page'] = array(
+    '#theme' => 'html_tag',
+    '#tag' => 'div',
+    '#value' => 'Unique ID: ' . uniqid(),
+  );
+  return $output;
+}
+
+/**
+ * Helper function to denied access to page and show error message.
+ * 
+ * @param string $message Given message to show.
+ */
+function utilities_denied_access($message) {
+  $message = t($message);
+  drupal_set_message($message, 'error');
+  drupal_access_denied();
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ * @see https://api.drupal.org/api/drupal/includes%21common.inc/function/drupal_get_token/7
+ */
+function utilities_preprocess_menu_link(&$variables) {
+  // Check current element's href attribute.
+  if (!empty($variables['element']) && $variables['element']['#href'] == 'secret') {
+    // Build query string with token and its current value.
+    $query_string = array(
+      'token' => drupal_get_token(TOKEN_VALUE),
+    );
+    // Add query options to element.
+    $variables['element']['#localized_options'] = array('query' => $query_string);
+  }
+}

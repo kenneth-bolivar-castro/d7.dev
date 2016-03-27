@@ -1,0 +1,4 @@
+name = Utilities
+description = Provides extra behavior and utilities to site.
+package = keboca
+core = 7.x
